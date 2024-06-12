@@ -78,3 +78,9 @@
     </option>
   {%- endif -%}
 {%- endfor -%}
+
+{% comment %}
+  Size preselector included after the size buttons are rendered in the DOM
+  Location: snippets/size-preselect.js.liquid
+{% endcomment %}
+{% render 'size-preselect.js' %}

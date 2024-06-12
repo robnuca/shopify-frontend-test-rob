@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% comment %} 
+        Link the styling for the modal
+        Location: assets/size-selector-modal.css
+    {% endcomment %}
+    {{ 'size-selector-modal.css' | asset_url | stylesheet_tag }}
+</head>
+
+<body>
+
+    <!-- Size selector pop-up modal -->
+    <div id="sizeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="sizeForm">
+                <label for="shoe-size">Select your shoe size:</label>
+                <select id="shoe-size" name="shoe-size" class="shoe-size-input">
+                    {% comment %} 
+                        Create two arrays for UK and EU sizes, loop through the UK sizes array and 
+                        create the size option attaching the corresponding EU size 
+                        to be displayed in the dropdown list.
+                    {% endcomment %}
+                    {% assign uk_sizes = "2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5" | split: ',' %}
+                    {% assign eu_sizes = "35,35.5,36,37,37.5,38,38.5,39,40,40.5,41,42,42.5,43,44,44.5,45,45.5,46,47,47.5,48,48.5,49,49.5" | split: ',' %}
+                    {% for index in (0..uk_sizes.size) %}
+                        {% if index < uk_sizes.size %}
+                            {% comment %} 
+                                Capture only the UK value (without the string) to be used on the product page.
+                                That's because the size buttons on the product page are only integers (UK sizes).
+                            {% endcomment %}
+                            {% capture option_value %}{{ uk_sizes[index] }} UK / {{ eu_sizes[index] }} EU{% endcapture %}
+                            <option value="{{ uk_sizes[index] }}">{{ option_value }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <div class="modal-buttons-container">
+                    <button type="button" class="modal-cancel-button">Cancel</button>
+                    <button type="submit" class="modal-save-button">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    /*
+        Use JS instead of media queries to adjust the modal's width according to the viewport size
+        and add a class to use within the styling.
+    */
+    function setModalWidth() {
+        const modalContent = document.querySelector(".modal-content");
+        const viewportWidth = window.innerWidth;
+        const modalWidth = viewportWidth >= 768 ? 500 : 0.9 * viewportWidth; // 500px on desktop, 90% on mobile
+        modalContent.style.width = modalWidth + "px";
+
+        // Check viewport width and add class for desktop view to select element accordingly
+        const shoeSizeSelect = document.getElementById('shoe-size');
+        if (viewportWidth >= 768) {
+            shoeSizeSelect.classList.add('desktop-shoe-size-input');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        /*
+            Display the pop-up if the preferredSize and sizePopupShown 
+            are not already set in the local storage.
+            This way we make sure the pop-up is not displayed again as the user already decided.
+        */
+        if (!localStorage.getItem('preferredSize') && !localStorage.getItem('sizePopupShown')) {
+            const modal = document.getElementById("sizeModal");
+            const span = document.getElementsByClassName("close")[0];
+
+            modal.style.display = "block";
+
+            /*
+                When the user closes the pop-up:
+                Hide the pop-up.
+                Set sizePopupShown key in local storage and assign it true.
+            */
+            span.onclick = function() {
+                modal.style.display = "none";
+                localStorage.setItem('sizePopupShown', 'true');
+            }
+
+            /*
+                When the user clicks outside the pop-up:
+                Hide the pop-up.
+                Set sizePopupShown key in local storage and assign it true.
+            */
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                    localStorage.setItem('sizePopupShown', 'true');
+                }
+            }
+
+            /*
+                When the user hits the Cancel button in the pop-up:
+                Hide the pop-up.
+                Set sizePopupShown key in local storage and assign it true.
+            */
+            document.querySelector('.modal-cancel-button').addEventListener('click', function() {
+                modal.style.display = "none";
+                localStorage.setItem('sizePopupShown', 'true');
+            });
+
+            /* 
+                Get the value of the selected size (selectedSize) from the dropdown and 
+                store it in the local storage under preferredSize key.
+                Hide the pop-up after the user hits Save button.
+            */
+            document.getElementById('sizeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const selectedSize = document.getElementById('shoe-size').value;
+                localStorage.setItem('preferredSize', selectedSize);
+                modal.style.display = "none";
+
+                // Force a reload to ensure the variant is correctly applied
+                const currentUrl = new URL(window.location);
+                window.location.href = currentUrl.pathname + '?modalPreselectedSize=' + selectedSize;
+            });
+
+            setModalWidth(); // Initial call to set the width of the pop-up
+            window.addEventListener('resize', setModalWidth); // Call setModalWidth() whenever the window is resized
+        }
+    });
+    </script>
+
+</body>
+</html>

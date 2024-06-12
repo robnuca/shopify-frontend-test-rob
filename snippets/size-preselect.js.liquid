@@ -1,0 +1,82 @@
+{%- comment -%}
+  This snippet preselects the shoe size based on the value stored in local storage (preferredSize), 
+  got from the size selector pop-up modal. See Location: snippets/size-selector-modal.liquid
+  It works for all products if the sizes are available for selection, on the product page.
+
+  Console logs left for debugging.
+{%- endcomment -%}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Get the size selected from the pop-up, that's stored in the local storage
+  const preferredSize = localStorage.getItem('preferredSize');
+
+  console.log('Preferred size from localStorage:', preferredSize);
+
+  /* 
+    If the size is set in the local storage, loop through the product variants and 
+    check if the option1 property of the current variant matches the preferredSize.
+    If a match is found, assign the id of the variant to the variantId variable.
+  */
+  if (preferredSize) {
+    const variants = {{ product.variants | json }};
+    let variantId;
+
+    // Find the variant ID that matches the preferred size, in our case the option1 is the shoe size
+    variants.forEach(function(variant) {
+      if (variant.option1 === preferredSize) {
+        variantId = variant.id;
+      }
+    });
+
+    console.log('Matched variant ID:', variantId);
+
+    if (variantId) {
+      // Update the URL in the product page with the variant query parameter
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set('variant', variantId);
+      window.history.replaceState(null, null, newUrl);
+
+      // Preselect the variant in the size buttons based on the input name
+      const sizeButtons = document.querySelectorAll('input[name="Size"]');
+      let variantPreselected = false;
+
+      sizeButtons.forEach(function(sizeButton) {
+        console.log('Size button ID:', sizeButton.id);
+        console.log('Size button value:', sizeButton.value);
+        console.log('Size button matches preferred size:', sizeButton.value == preferredSize);
+
+        if (sizeButton.value == preferredSize) {
+          sizeButton.checked = true;
+          variantPreselected = true;
+
+          console.log('Preselected variant option:', preferredSize);
+
+          // Trigger a change event on the size button to update the form
+          const event = new Event('change', { bubbles: true });
+          sizeButton.dispatchEvent(event);
+        }
+      });
+
+      if (!variantPreselected) {
+        console.error('Variant option not preselected in the size buttons');
+      }
+
+      // Set the hidden input value to the variant ID
+      const hiddenInput = document.querySelector('input[name="id"]');
+      if (hiddenInput) {
+        hiddenInput.value = variantId;
+
+        console.log('Hidden input set to variant ID:', variantId);
+        
+      } else {
+        console.error('Hidden input for variant ID not found');
+      }
+    } else {
+      console.error('No matching variant ID found for the preferred size');
+    }
+  } else {
+    console.log('No preferred size found in localStorage');
+  }
+});
+</script>

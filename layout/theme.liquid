@@ -335,4 +335,13 @@
       <script src="{{ 'predictive-search.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
   </body>
+
+  {% comment %}
+    Render the select shoe size pop-up modal.
+    Don't show it on the product page, as there is already the option to select the size.
+  {% endcomment %}
+  {% unless template == 'product' %}
+    {%- render 'size-selector-modal' -%}
+  {% endunless %}
+
 </html>
